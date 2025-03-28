@@ -1,6 +1,6 @@
 import os
 import sys
-import customtkinter as ctk  # type: ignore
+import customtkinter as ctk
 from tkinter import messagebox as msg
 
 # Add the parent directory to sys.path to import script from the parent directory

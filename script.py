@@ -7,7 +7,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes, hmac
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from tkinter import messagebox
-from customtkinter import CTkInputDialog
+from customtkinter import CTkInputDialog  # type: ignore
 
 HMAC_KEY_LENGTH = 32
 

@@ -1,2 +1,5 @@
 myenv/
 __pycache__/
+__pycache__/
+LINK.md
+.venv/

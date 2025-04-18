@@ -9,7 +9,7 @@ from PIL import Image, ImageTk
 
 # Ensure we can import script.py
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-import script 
+import text.script as script 
 
 class UnifiedApp(ctk.CTk):
     def __init__(self):

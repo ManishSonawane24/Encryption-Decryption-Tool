@@ -5,11 +5,12 @@ import tempfile
 from pathlib import Path
 from PIL import Image
 from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
 from script import (
     generate_key, load_key, get_key_from_password, generate_hmac,
     verify_hmac, check_password_strength, encrypt_file, decrypt_file
 )
-
+from image import encrypt_image, decrypt_image, is_valid_image, get_image_preview
 st.set_page_config(page_title="All-in-One Encryption-Decryption", layout="wide")
 
 # Define common styling
@@ -105,6 +106,7 @@ with tabs[0]:
                                    mime="video/mp4")
                 
 # --------- IMAGE ENCRYPTION TAB ----------
+
 with tabs[1]:
     with st.container():
         st.markdown("### 🖼️ Image Encryption & Decryption", unsafe_allow_html=True)
@@ -170,7 +172,6 @@ with tabs[1]:
                         st.error(f"Decryption failed: {e}")
                 else:
                     st.warning("Please upload an encrypted image and enter a key.")
-
 
 # --------- TEXT ENCRYPTION TAB ----------
 with tabs[2]:
@@ -239,41 +240,37 @@ with tabs[2]:
             if st.button("Decrypt File"):
                 if file_to_decrypt and dec_password and hmac_input:
                     try:
-                        # Save encrypted file temporarily
-                        with tempfile.NamedTemporaryFile(delete=False) as tmp_enc:
-                            tmp_enc.write(file_to_decrypt.read())
-                            tmp_enc_path = tmp_enc.name
+                        # Read the uploaded encrypted file
+                        encrypted_data = file_to_decrypt.read()
 
-                        key = get_key_from_password(dec_password, salt)
-                        with open(tmp_enc_path, "rb") as f:
-                            file_data = f.read()
-
-                        salt = file_data[:16]  # Extract salt (first 16 bytes)
-                        enc_content = file_data[16:]
-
-                        # Save enc_content to a new temp file
-                        with open(tmp_enc_path, "wb") as f:
-                            f.write(enc_content)
-
-                        key = get_key_from_password(dec_password, salt)
-
-                        # Verify HMAC
-                        if not verify_hmac(tmp_enc_path, key, bytes.fromhex(hmac_input)):
-                            st.error("🚫 HMAC verification failed. File may be tampered with or wrong password.")
+                        # Ensure the file has enough bytes for salt and HMAC
+                        hmac_size = hashes.SHA256().digest_size
+                        if len(encrypted_data) < 16 + hmac_size:
+                            st.error("Encrypted file is too short or corrupted.")
                         else:
-                            dec_path = tmp_enc_path + ".dec"
-                            decrypt_file(tmp_enc_path, dec_path, key)
+                            # Extract salt, encrypted content, and HMAC
+                            salt = encrypted_data[:16]
+                            encrypted_content = encrypted_data[16:-hmac_size]
+                            hmac_stored = encrypted_data[-hmac_size:]
 
-                            # Read decrypted content
-                            with open(dec_path, "rb") as f:
-                                decrypted_bytes = f.read()
+                            # Derive key from password and extracted salt
+                            key = get_key_from_password(dec_password, salt)
 
-                            st.success("✅ File decrypted and verified successfully!")
-                            st.download_button(
-                                label="⬇️ Download Decrypted File",
-                                data=decrypted_bytes,
-                                file_name="decrypted_output",
-                            )
+                            # Verify HMAC
+                            if not verify_hmac(key, encrypted_content, bytes.fromhex(hmac_input)):
+                                st.error("🚫 HMAC verification failed. File may be tampered with or wrong password.")
+                            else:
+                                fernet = Fernet(key)
+                                try:
+                                    decrypted_bytes = fernet.decrypt(encrypted_content)
+                                    st.success("✅ File decrypted and verified successfully!")
+                                    st.download_button(
+                                        label="⬇️ Download Decrypted File",
+                                        data=decrypted_bytes,
+                                        file_name="decrypted_output",
+                                    )
+                                except InvalidToken:
+                                    st.error("🚫 Decryption failed. Invalid key or corrupted data.")
                     except Exception as e:
                         st.error(f"Decryption failed: {e}")
                 else:

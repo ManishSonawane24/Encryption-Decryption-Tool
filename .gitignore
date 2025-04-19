@@ -1,5 +1,27 @@
-myenv/
+# Byte‑compiled files
 __pycache__/
-__pycache__/
-LINK.md
+__pycache__/*
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env/
 .venv/
+env/
+venv/
+myenv/
+
+# Editor and OS files
+*.swp
+.DS_Store
+.idea/
+.vscode/
+
+# Logs and databases
+*.log
+db.sqlite3
+
+# Other generated files
+*.egg-info/
+build/
+dist/

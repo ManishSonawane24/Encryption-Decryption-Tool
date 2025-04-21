@@ -7,5 +7,3 @@ numpy
 moviepy
 pillow
 streamlit
-tkinter
-customtkinter
